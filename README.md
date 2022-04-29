@@ -64,3 +64,5 @@ const res = await Promise.all([
 
 console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
 ```
+
+:warning: I advice you to use [nctx](https://github.com/devthejo/nctx) which uses `async_hooks` to detect dynamically the context in asynchronous call.
