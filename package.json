@@ -1,44 +1,47 @@
 {
-  "name": "typescript-swc-starter",
+  "name": "node-simple-context",
   "version": "1.0.0",
   "author": "maxgfr",
   "license": "MIT",
-  "description": "A minimalist typescript swc starter",
+  "description": "A minimalist node context",
   "main": "./build/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/maxgfr/typescript-swc-starter.git"
+    "url": "https://github.com/maxgfr/node-simple-context.git"
   },
   "bugs": {
-    "url": "https://github.com/maxgfr/typescript-swc-starter/issues"
+    "url": "https://github.com/maxgfr/node-simple-context/issues"
   },
-  "homepage": "https://github.com/maxgfr/typescript-swc-starter#readme",
+  "homepage": "https://github.com/maxgfr/node-simple-context#readme",
   "files": [
     "build"
   ],
   "keywords": [
-    "boilerplate",
-    "typescript",
-    "swc"
+    "context",
+    "node"
   ],
   "scripts": {
     "start": "node build/index.js",
     "dev": "nodemon",
     "develop": "node -r @swc-node/register ./src/index.ts",
-    "test": "DOTENV_CONFIG_PATH=.env.test jest",
-    "test:watch": "DOTENV_CONFIG_PATH=.env.test jest --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "clean": "rimraf build",
     "build": "tsc -p tsconfig.build.json",
     "build:watch": "tsc -w -p tsconfig.build.json",
     "build:swc": "swc ./src -d build",
     "build:swc:watch": "swc ./src -d build -w",
     "lint": "eslint ./src --ext .ts",
-    "prettier": "prettier --write './src/**/*.{ts,js,json}'"
+    "prettier": "prettier --write './src/**/*.{ts,js,json}'",
+    "release": "semantic-release"
   },
-  "dependencies": {
-    "dotenv": "16.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@semantic-release/commit-analyzer": "^9.0.2",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^8.0.4",
+    "@semantic-release/npm": "^9.0.1",
+    "@semantic-release/release-notes-generator": "^10.0.3",
     "@swc-node/register": "1.5.1",
     "@swc/cli": "0.1.57",
     "@swc/core": "1.2.173",
@@ -54,6 +57,7 @@
     "nodemon": "2.0.16",
     "prettier": "2.6.2",
     "rimraf": "3.0.2",
+    "semantic-release": "^19.0.2",
     "typescript": "4.6.4"
   }
 }

@@ -1,37 +1,66 @@
-# typescript-swc-starter
+# node-simple-context
 
-A simple node boilerplate made in typescript using swc.
+A simple helper to create a context in node.
 
-> NOTE : A version without rust compiler [swc](https://swc.rs/) is available [here](https://github.com/maxgfr/boilerplate-typescript-node).
+## Examples
 
-## Clone repository and install dependencies
+### Simple
 
-```sh
-git clone https://github.com/maxgfr/typescript-swc-starter # For cloning the repository
-cd typescript-swc-starter # To navigate to the repository root
-yarn # Install dependencies
-cp .env.example .env
+1. Create a new file `my-context.ts` in which you define your context.
+
+```ts
+import { createContext } from 'node-simple-context';
+
+export const contextA = createContext();
+export const contextB = createContext();
 ```
 
-## Running the code
+2. You now can set the context
 
-```sh
-yarn build # For building the code with typechecking
-yarn build:swc # For building without typechecking
-yarn start # For running the code builded
+```ts
+import { contextA, contextB } from './my-context';
+contextA.set('foo', 'bar');
+contextB.set('foo', 'baz');
 ```
 
-Or in `development` mode:
+3. In an other file, you can get your context value
 
-```sh
-yarn dev # For running the code in development thanks to swc and nodemon
+```ts
+import { contextA, contextB } from './my-context';
+contextA.get('foo'); // bar
+contextB.get('foo'); // baz
 ```
 
-> **:warning: No typechecking made in dev mode**
+### Complex
 
-## Testing the code
+```ts
+const context = createContext();
 
-```sh
-yarn test # For running unit test
-yarn test:watch # For watching unit test
+const func = (forkId: string): string => {
+  const foo = context.getForkProperty(forkId, 'foo');
+  return `foo=${foo}`;
+};
+
+context.fork('X');
+context.setForkProperty('X', 'foo', 'bar');
+
+const res = await Promise.all([
+  new Promise((resolve) => {
+    context.fork('A');
+    context.setForkProperty('A', 'foo', 'tata'),
+      setTimeout(() => {
+        resolve(func('A'));
+      }, 400);
+  }),
+  func('X'),
+  new Promise((resolve) => {
+    context.fork('B');
+    context.setForkProperty('B', 'foo', 'toto'),
+      setTimeout(() => {
+        resolve(func('B'));
+      }, 200);
+  }),
+]);
+
+console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
 ```
