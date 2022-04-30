@@ -1,6 +1,6 @@
 # node-simple-context
 
-A simple helper to create a context in node.
+`node-simple-context` is an helper to create a context in node.
 
 ## Installation
 

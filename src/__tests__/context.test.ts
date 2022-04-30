@@ -1,4 +1,4 @@
-import { createSimpleContext, SimpleContext } from '../context';
+import { createSimpleContext, SimpleContext } from '..';
 
 describe('SimpleContext', () => {
   it('should create a context', () => {
