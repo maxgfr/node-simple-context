@@ -1,9 +1,9 @@
 import { randomUUID } from 'crypto';
 
-export class Context {
+export class SimpleContext {
   private contextId: string;
   private properties: { [key: string]: any } = {};
-  private forks: Array<Context> = [];
+  private forks: Array<SimpleContext> = [];
 
   constructor(private id = randomUUID()) {
     this.contextId = this.id;
@@ -18,7 +18,7 @@ export class Context {
   }
 
   public fork(id: string): void {
-    this.forks = [...this.forks, new Context(id)];
+    this.forks = [...this.forks, new SimpleContext(id)];
   }
 
   public setForkProperty(id: string, key: string, value: any): void {
@@ -37,6 +37,6 @@ export class Context {
   }
 }
 
-export function createContext(): Context {
-  return new Context();
+export function createSimpleContext(): SimpleContext {
+  return new SimpleContext();
 }
