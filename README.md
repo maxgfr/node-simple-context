@@ -2,6 +2,8 @@
 
 `node-simple-context` is an helper to create a context in node.
 
+This library is highly inspired by [nctx](https://github.com/devthejo/nctx).
+
 ## Installation
 
 ```sh
@@ -40,39 +42,41 @@ console.log(contextA.get('xxx')); // undefined
 
 ### Complex
 
+#### With [`async_hooks`](https://nodejs.org/api/async_hooks.html)
+
 ```ts
 const context = createSimpleContext();
 
-const func = (forkId: string): string => {
-  const foo = context.getForkProperty(forkId, 'foo');
+const func = (): string => {
+  const foo = context.getForkProperty('foo');
   return `foo=${foo}`;
 };
 
-context.fork('X');
-context.setForkProperty('X', 'foo', 'bar');
+context.fork();
+context.setForkProperty('foo', 'bar');
 
 const res = await Promise.all([
   new Promise((resolve) => {
-    context.fork('A');
-    context.setForkProperty('A', 'foo', 'tata'),
-      setTimeout(() => {
-        resolve(func('A'));
-      }, 400);
+    setTimeout(() => {
+      context.fork();
+      context.setForkProperty('foo', 'tata'), resolve(func());
+    }, 400);
   }),
-  func('X'),
+  func(),
   new Promise((resolve) => {
-    context.fork('B');
-    context.setForkProperty('B', 'foo', 'toto'),
-      setTimeout(() => {
-        resolve(func('B'));
-      }, 200);
+    setTimeout(() => {
+      context.fork();
+      context.setForkProperty('foo', 'toto'), resolve(func());
+    }, 200);
   }),
 ]);
 
 console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
 ```
 
-To achieve this, you can also define multiple contexts in the same file, like that:
+#### Without [`async_hooks`](https://nodejs.org/api/async_hooks.html)
+
+Here, I define multiple contexts in the same file, like that:
 
 ```ts
 const contextA = createSimpleContext();
@@ -88,21 +92,19 @@ contextC.setProperty('foo', 'bar');
 
 const res = await Promise.all([
   new Promise((resolve) => {
-    contextA.setProperty('foo', 'tata'),
-      setTimeout(() => {
-        resolve(func(contextA));
-      }, 400);
+    setTimeout(() => {
+      contextA.setProperty('foo', 'tata');
+      resolve(func(contextA));
+    }, 400);
   }),
   func(contextC),
   new Promise((resolve) => {
-    contextB.setProperty('foo', 'toto'),
-      setTimeout(() => {
-        resolve(func(contextB));
-      }, 200);
+    setTimeout(() => {
+      contextB.setProperty('foo', 'toto');
+      resolve(func(contextB));
+    }, 200);
   }),
 ]);
 
 console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
 ```
-
-:warning: Otherwise, I advice you to use [nctx](https://github.com/devthejo/nctx) which uses `async_hooks` to detect dynamically the context in asynchronous call.

@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import async_hooks from 'async_hooks';
 
 export class SimpleContext {
   private contextId: string;
@@ -17,18 +18,23 @@ export class SimpleContext {
     this.properties[key] = value;
   }
 
-  public fork(id: string): void {
+  public fork(): void {
+    const id = async_hooks.executionAsyncId().toString();
     this.forks = [...this.forks, new SimpleContext(id)];
   }
 
-  public setForkProperty(id: string, key: string, value: any): void {
-    const fork = this.forks.find((fork) => fork.contextId === id);
-    if (fork) {
-      fork.setProperty(key, value);
+  public setForkProperty(key: string, value: any): void {
+    const id = async_hooks.executionAsyncId().toString();
+    if (id) {
+      const fork = this.forks.find((fork) => fork.contextId === id);
+      if (fork) {
+        fork.setProperty(key, value);
+      }
     }
   }
 
-  public getForkProperty(id: string, key: string): any {
+  public getForkProperty(key: string): any {
+    const id = async_hooks.executionAsyncId().toString();
     const fork = this.forks.find((fork) => fork.contextId === id);
     if (fork) {
       return fork.getProperty(key);

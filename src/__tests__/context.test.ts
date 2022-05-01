@@ -9,29 +9,27 @@ describe('SimpleContext', () => {
   it('should display value in order with fork', async () => {
     const context = createSimpleContext();
 
-    const func = (forkId: string): string => {
-      const foo = context.getForkProperty(forkId, 'foo');
+    const func = (): string => {
+      const foo = context.getForkProperty('foo');
       return `foo=${foo}`;
     };
 
-    context.fork('X');
-    context.setForkProperty('X', 'foo', 'bar');
+    context.fork();
+    context.setForkProperty('foo', 'bar');
 
     const res = await Promise.all([
       new Promise((resolve) => {
-        context.fork('A');
-        context.setForkProperty('A', 'foo', 'tata'),
-          setTimeout(() => {
-            resolve(func('A'));
-          }, 400);
+        setTimeout(() => {
+          context.fork();
+          context.setForkProperty('foo', 'tata'), resolve(func());
+        }, 400);
       }),
-      func('X'),
+      func(),
       new Promise((resolve) => {
-        context.fork('B');
-        context.setForkProperty('B', 'foo', 'toto'),
-          setTimeout(() => {
-            resolve(func('B'));
-          }, 200);
+        setTimeout(() => {
+          context.fork();
+          context.setForkProperty('foo', 'toto'), resolve(func());
+        }, 200);
       }),
     ]);
     expect(res).toStrictEqual(['foo=tata', 'foo=bar', 'foo=toto']);
@@ -51,17 +49,17 @@ describe('SimpleContext', () => {
 
     const res = await Promise.all([
       new Promise((resolve) => {
-        contextA.setProperty('foo', 'tata'),
-          setTimeout(() => {
-            resolve(func(contextA));
-          }, 400);
+        setTimeout(() => {
+          contextA.setProperty('foo', 'tata');
+          resolve(func(contextA));
+        }, 400);
       }),
       func(contextC),
       new Promise((resolve) => {
-        contextB.setProperty('foo', 'toto'),
-          setTimeout(() => {
-            resolve(func(contextB));
-          }, 200);
+        setTimeout(() => {
+          contextB.setProperty('foo', 'toto');
+          resolve(func(contextB));
+        }, 200);
       }),
     ]);
     expect(res).toStrictEqual(['foo=tata', 'foo=bar', 'foo=toto']);
