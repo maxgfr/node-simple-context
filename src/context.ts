@@ -25,11 +25,9 @@ export class SimpleContext {
 
   public setForkProperty(key: string, value: any): void {
     const id = async_hooks.executionAsyncId().toString();
-    if (id) {
-      const fork = this.forks.find((fork) => fork.contextId === id);
-      if (fork) {
-        fork.setProperty(key, value);
-      }
+    const fork = this.forks.find((fork) => fork.contextId === id);
+    if (fork) {
+      fork.setProperty(key, value);
     }
   }
 
