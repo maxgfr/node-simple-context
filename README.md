@@ -42,7 +42,7 @@ console.log(contextA.get('xxx')); // undefined
 
 ### Complex
 
-#### With [`async_hooks`](https://nodejs.org/api/async_hooks.html)
+#### By using [`async_hooks`](https://nodejs.org/api/async_hooks.html)
 
 ```ts
 const context = createSimpleContext();
@@ -76,7 +76,7 @@ const res = await Promise.all([
 console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
 ```
 
-#### Without [`async_hooks`](https://nodejs.org/api/async_hooks.html)
+#### By using multiple contexts
 
 Here, I define multiple contexts in the same file, like that:
 
