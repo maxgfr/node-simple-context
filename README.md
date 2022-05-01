@@ -59,14 +59,16 @@ const res = await Promise.all([
   new Promise((resolve) => {
     setTimeout(() => {
       context.fork();
-      context.setForkProperty('foo', 'tata'), resolve(func());
+      context.setForkProperty('foo', 'tata');
+      resolve(func());
     }, 400);
   }),
   func(),
   new Promise((resolve) => {
     setTimeout(() => {
       context.fork();
-      context.setForkProperty('foo', 'toto'), resolve(func());
+      context.setForkProperty('foo', 'toto');
+      resolve(func());
     }, 200);
   }),
 ]);
