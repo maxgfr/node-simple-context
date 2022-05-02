@@ -64,29 +64,25 @@ context.set('foo', 'bar');
 
 const res = await Promise.all([
   new Promise((resolve) => {
-    context.fork();
-    context.set('foo', 'tata');
+    context.fork().set('foo', 'tata');
     setTimeout(() => {
       resolve(func());
     }, 400);
   }),
   new Promise((resolve) => {
-    context.fork();
-    context.set('foo', 'toto');
+    context.fork().set('foo', 'toto');
     setTimeout(() => {
       resolve(func());
     }, 200);
   }),
   new Promise((resolve) => {
-    context.fork();
-    context.set('foo', 'titi');
+    context.fork().set('foo', 'titi');
     setTimeout(() => {
       resolve(func());
     }, 100);
   }),
   new Promise((resolve) => {
-    context.fork();
-    context.set('foo', 'tutu');
+    context.fork().set('foo', 'tutu');
     setTimeout(() => {
       resolve(func());
     }, 600);

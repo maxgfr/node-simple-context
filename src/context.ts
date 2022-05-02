@@ -30,8 +30,9 @@ export class SimpleContext {
     return this.setForkProperty<T>(key, value);
   }
 
-  public fork(): void {
+  public fork(): SimpleContext {
     this.store.set(asyncHooks.executionAsyncId(), {});
+    return this;
   }
 
   private setForkProperty<T>(key: string, value: T): void {
