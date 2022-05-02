@@ -62,58 +62,119 @@ context.set('foo', 'bar');
 
 const res = await Promise.all([
   new Promise((resolve) => {
+    context.fork();
+    context.set('foo', 'tata');
     setTimeout(() => {
-      context.fork();
-      context.set('foo', 'tata');
       resolve(func());
     }, 400);
   }),
-  func(),
   new Promise((resolve) => {
+    context.fork();
+    context.set('foo', 'toto');
     setTimeout(() => {
-      context.fork();
-      context.set('foo', 'toto');
       resolve(func());
     }, 200);
   }),
+  new Promise((resolve) => {
+    context.fork();
+    context.set('foo', 'titi');
+    setTimeout(() => {
+      resolve(func());
+    }, 100);
+  }),
+  new Promise((resolve) => {
+    context.fork();
+    context.set('foo', 'tutu');
+    setTimeout(() => {
+      resolve(func());
+    }, 600);
+  }),
 ]);
 
-console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
+console.log(res); // ['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']
 ```
 
 :warning: I advice you to use [nctx](https://github.com/devthejo/nctx) to get a context which uses `parentExecutionId` if you want to get your property in an other promise.
 
 #### By using multiple contexts
 
-The alternative is to define multiple contexts in the same file, like that:
-
 ```ts
 const contextA = createSimpleContext();
 const contextB = createSimpleContext();
 const contextC = createSimpleContext();
+const contextD = createSimpleContext();
 
 const func = (context: SimpleContext): string => {
   const foo = context.get('foo');
   return `foo=${foo}`;
 };
 
-contextC.set('foo', 'bar');
-
 const res = await Promise.all([
   new Promise((resolve) => {
+    contextA.set('foo', 'tata');
     setTimeout(() => {
-      contextA.set('foo', 'tata');
       resolve(func(contextA));
     }, 400);
   }),
-  func(contextC),
   new Promise((resolve) => {
+    contextB.set('foo', 'toto');
     setTimeout(() => {
-      contextB.set('foo', 'toto');
       resolve(func(contextB));
     }, 200);
   }),
+  new Promise((resolve) => {
+    contextC.set('foo', 'titi');
+    setTimeout(() => {
+      resolve(func(contextC));
+    }, 100);
+  }),
+  new Promise((resolve) => {
+    contextD.set('foo', 'tutu');
+    setTimeout(() => {
+      resolve(func(contextD));
+    }, 600);
+  }),
 ]);
 
-console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
+console.log(res); // ['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']
+```
+
+#### By using multiple keys
+
+```ts
+const context = createSimpleContext();
+
+const func = (key: string): string => {
+  const foo = context.get(key);
+  return `foo=${foo}`;
+};
+
+const res = await Promise.all([
+  new Promise((resolve) => {
+    context.set('foo1', 'tata');
+    setTimeout(() => {
+      resolve(func('foo1'));
+    }, 400);
+  }),
+  new Promise((resolve) => {
+    context.set('foo2', 'toto');
+    setTimeout(() => {
+      resolve(func('foo2'));
+    }, 200);
+  }),
+  new Promise((resolve) => {
+    context.set('foo3', 'titi');
+    setTimeout(() => {
+      resolve(func('foo3'));
+    }, 100);
+  }),
+  new Promise((resolve) => {
+    context.set('foo4', 'tutu');
+    setTimeout(() => {
+      resolve(func('foo4'));
+    }, 600);
+  }),
+]);
+
+console.log(res); // ['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']
 ```

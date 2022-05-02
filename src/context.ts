@@ -1,13 +1,25 @@
-import { randomUUID } from 'crypto';
-import async_hooks from 'async_hooks';
+import asyncHooks from 'async_hooks';
 
 export class SimpleContext {
-  private contextId: string;
   private properties: Record<string, unknown> = {};
-  private forks: Array<SimpleContext> = [];
+  private asyncHooks: asyncHooks.AsyncHook;
+  private store: Map<number, typeof this.properties | undefined>;
 
-  constructor(id = randomUUID()) {
-    this.contextId = id;
+  constructor() {
+    this.store = new Map();
+    this.asyncHooks = asyncHooks.createHook({
+      init: (asyncId, _, triggerAsyncId) => {
+        if (this.store.has(triggerAsyncId)) {
+          this.store.set(asyncId, this.store.get(triggerAsyncId));
+        }
+      },
+      destroy: (asyncId) => {
+        if (this.store.has(asyncId)) {
+          this.store.delete(asyncId);
+        }
+      },
+    });
+    this.asyncHooks.enable();
   }
 
   public get<T>(key: string): T | undefined {
@@ -19,30 +31,19 @@ export class SimpleContext {
   }
 
   public fork(): void {
-    const id = async_hooks.executionAsyncId();
-    this.forks = [...this.forks, new SimpleContext(id.toString())];
+    this.store.set(asyncHooks.executionAsyncId(), {});
   }
 
   private setForkProperty<T>(key: string, value: T): void {
-    const id = async_hooks.executionAsyncId().toString();
-    const fork = this.forks.find((fork) => fork.contextId === id);
-    return fork
-      ? fork.setProperty<T>(key, value)
-      : this.setProperty<T>(key, value);
+    const store = this.store.get(asyncHooks.executionAsyncId());
+    store ? (store[key] = value) : (this.properties[key] = value);
   }
 
   private getForkProperty<T>(key: string): T | undefined {
-    const id = async_hooks.executionAsyncId().toString();
-    const fork = this.forks.find((fork) => fork.contextId === id);
-    return fork ? fork.getProperty<T>(key) : this.getProperty<T>(key);
-  }
-
-  private setProperty<T>(key: string, value: T): void {
-    this.properties[key] = value;
-  }
-
-  private getProperty<T>(key: string): T | undefined {
-    return this.properties[key] as T | undefined;
+    const store = this.store.get(asyncHooks.executionAsyncId());
+    return store
+      ? (store[key] as T | undefined)
+      : (this.properties[key] as T | undefined);
   }
 }
 

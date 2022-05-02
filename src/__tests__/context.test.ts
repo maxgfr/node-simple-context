@@ -26,51 +26,111 @@ describe('SimpleContext', () => {
 
     const res = await Promise.all([
       new Promise((resolve) => {
+        context.fork();
+        context.set('foo', 'tata');
         setTimeout(() => {
-          context.fork();
-          context.set('foo', 'tata');
           resolve(func());
         }, 400);
       }),
-      func(),
       new Promise((resolve) => {
+        context.fork();
+        context.set('foo', 'toto');
         setTimeout(() => {
-          context.fork();
-          context.set('foo', 'toto');
           resolve(func());
         }, 200);
       }),
+      new Promise((resolve) => {
+        context.fork();
+        context.set('foo', 'titi');
+        setTimeout(() => {
+          resolve(func());
+        }, 100);
+      }),
+      new Promise((resolve) => {
+        context.fork();
+        context.set('foo', 'tutu');
+        setTimeout(() => {
+          resolve(func());
+        }, 600);
+      }),
     ]);
-    expect(res).toStrictEqual(['foo=tata', 'foo=bar', 'foo=toto']);
+    expect(res).toStrictEqual(['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']);
   });
 
-  it('should display value in order', async () => {
+  it('should display value in order with multiple context', async () => {
     const contextA = createSimpleContext();
     const contextB = createSimpleContext();
     const contextC = createSimpleContext();
+    const contextD = createSimpleContext();
 
     const func = (context: SimpleContext): string => {
       const foo = context.get('foo');
       return `foo=${foo}`;
     };
 
-    contextC.set('foo', 'bar');
-
     const res = await Promise.all([
       new Promise((resolve) => {
+        contextA.set('foo', 'tata');
         setTimeout(() => {
-          contextA.set('foo', 'tata');
           resolve(func(contextA));
         }, 400);
       }),
-      func(contextC),
       new Promise((resolve) => {
+        contextB.set('foo', 'toto');
         setTimeout(() => {
-          contextB.set('foo', 'toto');
           resolve(func(contextB));
         }, 200);
       }),
+      new Promise((resolve) => {
+        contextC.set('foo', 'titi');
+        setTimeout(() => {
+          resolve(func(contextC));
+        }, 100);
+      }),
+      new Promise((resolve) => {
+        contextD.set('foo', 'tutu');
+        setTimeout(() => {
+          resolve(func(contextD));
+        }, 600);
+      }),
     ]);
-    expect(res).toStrictEqual(['foo=tata', 'foo=bar', 'foo=toto']);
+    expect(res).toStrictEqual(['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']);
+  });
+
+  it('should display value in order with multiple value', async () => {
+    const context = createSimpleContext();
+
+    const func = (key: string): string => {
+      const foo = context.get(key);
+      return `foo=${foo}`;
+    };
+
+    const res = await Promise.all([
+      new Promise((resolve) => {
+        context.set('foo1', 'tata');
+        setTimeout(() => {
+          resolve(func('foo1'));
+        }, 400);
+      }),
+      new Promise((resolve) => {
+        context.set('foo2', 'toto');
+        setTimeout(() => {
+          resolve(func('foo2'));
+        }, 200);
+      }),
+      new Promise((resolve) => {
+        context.set('foo3', 'titi');
+        setTimeout(() => {
+          resolve(func('foo3'));
+        }, 100);
+      }),
+      new Promise((resolve) => {
+        context.set('foo4', 'tutu');
+        setTimeout(() => {
+          resolve(func('foo4'));
+        }, 600);
+      }),
+    ]);
+    expect(res).toStrictEqual(['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']);
   });
 });
