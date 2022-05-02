@@ -2,15 +2,17 @@
 
 `node-simple-context` is an helper to create a context in node.
 
+This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You definitely should check it out!
+
 ## Installation
 
 ```sh
 npm install --save node-simple-context
 ```
 
-## Examples
+## Usage
 
-### Simple
+### Simple example
 
 #### 1. Create a new file `my-context.ts` in which you define your context.
 
@@ -43,7 +45,7 @@ console.log(contextA.get('xxx')); // undefined
 console.log(contextA.get<string>('foo')); // bar
 ```
 
-### Complex
+### Complex examples
 
 #### By forking your context
 
@@ -93,8 +95,6 @@ const res = await Promise.all([
 
 console.log(res); // ['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']
 ```
-
-:warning: I advice you to use [nctx](https://github.com/devthejo/nctx) to get a context which uses `parentExecutionId` if you want to get your property in an other promise.
 
 #### By using multiple contexts
 
