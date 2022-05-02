@@ -7,7 +7,7 @@ This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You
 ## Installation
 
 ```sh
-npm install --save node-simple-context
+npm install node-simple-context
 ```
 
 ## Usage
