@@ -5,47 +5,44 @@ export class SimpleContext {
   private contextId: string;
   private properties: Record<string, unknown> = {};
   private forks: Array<SimpleContext> = [];
-  private isFork: boolean;
 
-  constructor(id = randomUUID(), isFork = false) {
+  constructor(id = randomUUID()) {
     this.contextId = id;
-    this.isFork = isFork;
   }
 
   public get<T>(key: string): T | undefined {
-    if (this.isFork) {
-      return this.getForkProperty(key);
-    }
-    return this.properties[key] as T | undefined;
+    return this.getForkProperty<T>(key);
   }
 
   public set<T>(key: string, value: T): void {
-    if (this.isFork) {
-      return this.setForkProperty(key, value);
-    }
-    this.properties[key] = value;
+    return this.setForkProperty<T>(key, value);
   }
 
   public fork(): void {
-    const id = async_hooks.executionAsyncId().toString();
-    this.forks = [...this.forks, new SimpleContext(id)];
+    const id = async_hooks.executionAsyncId();
+    this.forks = [...this.forks, new SimpleContext(id.toString())];
   }
 
   private setForkProperty<T>(key: string, value: T): void {
     const id = async_hooks.executionAsyncId().toString();
     const fork = this.forks.find((fork) => fork.contextId === id);
-    if (fork) {
-      fork.set(key, value);
-    }
+    return fork
+      ? fork.setProperty<T>(key, value)
+      : this.setProperty<T>(key, value);
   }
 
   private getForkProperty<T>(key: string): T | undefined {
     const id = async_hooks.executionAsyncId().toString();
     const fork = this.forks.find((fork) => fork.contextId === id);
-    if (fork) {
-      return fork.get<T>(key);
-    }
-    return undefined;
+    return fork ? fork.getProperty<T>(key) : this.getProperty<T>(key);
+  }
+
+  private setProperty<T>(key: string, value: T): void {
+    this.properties[key] = value;
+  }
+
+  private getProperty<T>(key: string): T | undefined {
+    return this.properties[key] as T | undefined;
   }
 }
 
