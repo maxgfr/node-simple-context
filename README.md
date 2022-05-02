@@ -81,7 +81,7 @@ const res = await Promise.all([
 console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
 ```
 
-:warning: I advice you to use [nctx](https://github.com/devthejo/nctx) to get a context which uses `parentExecutionId` if you want to get your property in an other `Promise`.
+:warning: I advice you to use [nctx](https://github.com/devthejo/nctx) to get a context which uses `parentExecutionId` if you want to get your property in an other promise.
 
 #### By using multiple contexts
 
