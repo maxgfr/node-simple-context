@@ -6,22 +6,29 @@ describe('SimpleContext', () => {
     expect(context).toBeInstanceOf(SimpleContext);
   });
 
+  it('should get a value from a context', () => {
+    const context = createSimpleContext();
+    context.set('A', 10);
+    const res = context.get<number>('A');
+    expect(res).toBe(10);
+  });
+
   it('should display value in order with fork', async () => {
     const context = createSimpleContext();
 
     const func = (): string => {
-      const foo = context.getForkProperty('foo');
+      const foo = context.get('foo');
       return `foo=${foo}`;
     };
 
     context.fork();
-    context.setForkProperty('foo', 'bar');
+    context.set('foo', 'bar');
 
     const res = await Promise.all([
       new Promise((resolve) => {
         setTimeout(() => {
           context.fork();
-          context.setForkProperty('foo', 'tata');
+          context.set('foo', 'tata');
           resolve(func());
         }, 400);
       }),
@@ -29,7 +36,7 @@ describe('SimpleContext', () => {
       new Promise((resolve) => {
         setTimeout(() => {
           context.fork();
-          context.setForkProperty('foo', 'toto');
+          context.set('foo', 'toto');
           resolve(func());
         }, 200);
       }),
@@ -43,23 +50,23 @@ describe('SimpleContext', () => {
     const contextC = createSimpleContext();
 
     const func = (context: SimpleContext): string => {
-      const foo = context.getProperty('foo');
+      const foo = context.get('foo');
       return `foo=${foo}`;
     };
 
-    contextC.setProperty('foo', 'bar');
+    contextC.set('foo', 'bar');
 
     const res = await Promise.all([
       new Promise((resolve) => {
         setTimeout(() => {
-          contextA.setProperty('foo', 'tata');
+          contextA.set('foo', 'tata');
           resolve(func(contextA));
         }, 400);
       }),
       func(contextC),
       new Promise((resolve) => {
         setTimeout(() => {
-          contextB.setProperty('foo', 'toto');
+          contextB.set('foo', 'toto');
           resolve(func(contextB));
         }, 200);
       }),

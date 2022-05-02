@@ -3,18 +3,26 @@ import async_hooks from 'async_hooks';
 
 export class SimpleContext {
   private contextId: string;
-  private properties: { [key: string]: any } = {};
+  private properties: Record<string, unknown> = {};
   private forks: Array<SimpleContext> = [];
+  private isFork: boolean;
 
-  constructor(private id = randomUUID()) {
-    this.contextId = this.id;
+  constructor(id = randomUUID(), isFork = false) {
+    this.contextId = id;
+    this.isFork = isFork;
   }
 
-  public getProperty(key: string): any {
-    return this.properties[key];
+  public get<T>(key: string): T | undefined {
+    if (this.isFork) {
+      return this.getForkProperty(key);
+    }
+    return this.properties[key] as T | undefined;
   }
 
-  public setProperty(key: string, value: any): void {
+  public set<T>(key: string, value: T): void {
+    if (this.isFork) {
+      return this.setForkProperty(key, value);
+    }
     this.properties[key] = value;
   }
 
@@ -23,19 +31,19 @@ export class SimpleContext {
     this.forks = [...this.forks, new SimpleContext(id)];
   }
 
-  public setForkProperty(key: string, value: any): void {
+  private setForkProperty<T>(key: string, value: T): void {
     const id = async_hooks.executionAsyncId().toString();
     const fork = this.forks.find((fork) => fork.contextId === id);
     if (fork) {
-      fork.setProperty(key, value);
+      fork.set(key, value);
     }
   }
 
-  public getForkProperty(key: string): any {
+  private getForkProperty<T>(key: string): T | undefined {
     const id = async_hooks.executionAsyncId().toString();
     const fork = this.forks.find((fork) => fork.contextId === id);
     if (fork) {
-      return fork.getProperty(key);
+      return fork.get<T>(key);
     }
     return undefined;
   }

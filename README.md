@@ -14,7 +14,7 @@ npm install --save node-simple-context
 
 ### Simple
 
-1. Create a new file `my-context.ts` in which you define your context.
+- 1. Create a new file `my-context.ts` in which you define your context.
 
 ```ts
 import { createSimpleContext } from 'node-simple-context';
@@ -23,21 +23,26 @@ export const contextA = createSimpleContext();
 export const contextB = createSimpleContext();
 ```
 
-2. You now can set the context
+- 2. You now can set the context in your code wherever you want.
 
 ```ts
 import { contextA, contextB } from './my-context';
+
 contextA.set('foo', 'bar');
 contextB.set('foo', 'baz');
 ```
 
-3. In an other file, you can get your context value
+- 3. In an other file, you can get your context value
 
 ```ts
 import { contextA, contextB } from './my-context';
+
 console.log(contextA.get('foo')); // bar
 console.log(contextB.get('foo')); // baz
 console.log(contextA.get('xxx')); // undefined
+
+// in typescript
+console.log(contextA.get<string>('foo')); // bar
 ```
 
 ### Complex
@@ -48,18 +53,18 @@ console.log(contextA.get('xxx')); // undefined
 const context = createSimpleContext();
 
 const func = (): string => {
-  const foo = context.getForkProperty('foo');
+  const foo = context.get('foo');
   return `foo=${foo}`;
 };
 
 context.fork();
-context.setForkProperty('foo', 'bar');
+context.set('foo', 'bar');
 
 const res = await Promise.all([
   new Promise((resolve) => {
     setTimeout(() => {
       context.fork();
-      context.setForkProperty('foo', 'tata');
+      context.set('foo', 'tata');
       resolve(func());
     }, 400);
   }),
@@ -67,7 +72,7 @@ const res = await Promise.all([
   new Promise((resolve) => {
     setTimeout(() => {
       context.fork();
-      context.setForkProperty('foo', 'toto');
+      context.set('foo', 'toto');
       resolve(func());
     }, 200);
   }),
@@ -86,23 +91,23 @@ const contextB = createSimpleContext();
 const contextC = createSimpleContext();
 
 const func = (context: SimpleContext): string => {
-  const foo = context.getProperty('foo');
+  const foo = context.get('foo');
   return `foo=${foo}`;
 };
 
-contextC.setProperty('foo', 'bar');
+contextC.set('foo', 'bar');
 
 const res = await Promise.all([
   new Promise((resolve) => {
     setTimeout(() => {
-      contextA.setProperty('foo', 'tata');
+      contextA.set('foo', 'tata');
       resolve(func(contextA));
     }, 400);
   }),
   func(contextC),
   new Promise((resolve) => {
     setTimeout(() => {
-      contextB.setProperty('foo', 'toto');
+      contextB.set('foo', 'toto');
       resolve(func(contextB));
     }, 200);
   }),

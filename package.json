@@ -21,7 +21,10 @@
     "node",
     "node-simple-context",
     "minimalist",
-    "react-context"
+    "react-context",
+    "async_hooks",
+    "async-hooks",
+    "typescript"
   ],
   "scripts": {
     "start": "node build/index.js",
