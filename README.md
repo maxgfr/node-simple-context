@@ -14,7 +14,7 @@ npm install --save node-simple-context
 
 ### Simple
 
-- 1. Create a new file `my-context.ts` in which you define your context.
+#### 1. Create a new file `my-context.ts` in which you define your context.
 
 ```ts
 import { createSimpleContext } from 'node-simple-context';
@@ -23,7 +23,7 @@ export const contextA = createSimpleContext();
 export const contextB = createSimpleContext();
 ```
 
-- 2. You now can set the context in your code wherever you want.
+#### 2. You now can set the context in your code wherever you want
 
 ```ts
 import { contextA, contextB } from './my-context';
@@ -32,7 +32,7 @@ contextA.set('foo', 'bar');
 contextB.set('foo', 'baz');
 ```
 
-- 3. In an other file, you can get your context value
+#### 3. And, get your context value wherever you want
 
 ```ts
 import { contextA, contextB } from './my-context';
@@ -47,7 +47,9 @@ console.log(contextA.get<string>('foo')); // bar
 
 ### Complex
 
-#### By using [`async_hooks`](https://nodejs.org/api/async_hooks.html)
+#### By forking your context
+
+Thanks to [`async_hooks`](https://nodejs.org/api/async_hooks.html) api, you can `fork` your context in promise or async functions. As you can see below:
 
 ```ts
 const context = createSimpleContext();
@@ -83,7 +85,7 @@ console.log(res); // ['foo=tata', 'foo=bar', 'foo=toto']
 
 #### By using multiple contexts
 
-Here, I define multiple contexts in the same file, like that:
+The alternative is to define multiple contexts in the same file, like that:
 
 ```ts
 const contextA = createSimpleContext();
