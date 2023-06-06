@@ -2,7 +2,7 @@
 
 `node-simple-context` is an helper to create a context in node.
 
-This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You definitely should check it out!
+This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You definitely should check it out! Thanks to @devthejo for his help 💪
 
 ## Installation
 
@@ -50,6 +50,8 @@ console.log(contextA.get<string>('foo')); // bar
 #### By forking your context
 
 Thanks to [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html) api, you can `fork` your context in promise or async functions. As you can see below:
+
+> You can also pass a callback in `fork` method to runs a function synchronously within a context and returns its return value which uses [run method from AsyncLocalStorage](https://nodejs.org/api/async_context.html#asynclocalstoragerunstore-callback-args) (cf. [example](./src/__tests__/context.test.ts#L134))
 
 ```ts
 const context = createSimpleContext();

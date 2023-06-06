@@ -1,3 +1,4 @@
+import EventEmitter from 'events';
 import { createSimpleContext, SimpleContext } from '..';
 
 describe('SimpleContext', () => {
@@ -128,5 +129,69 @@ describe('SimpleContext', () => {
       }),
     ]);
     expect(res).toStrictEqual(['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']);
+  });
+
+  it('should work if the values are wrapped in a callback run', async () => {
+    function Deferred() {
+      let resolve;
+      let reject;
+      const promise = new Promise((thisResolve, thisReject) => {
+        resolve = thisResolve;
+        reject = thisReject;
+      });
+      return Object.assign(promise, { resolve, reject });
+    }
+    const emitter = new EventEmitter();
+
+    const context = createSimpleContext();
+
+    const deferredTiti: any = Deferred();
+    const deferredToto: any = Deferred();
+    emitter.on('titi', () => {
+      context.fork(() => {
+        context.set('foo', 'titi2');
+      });
+    });
+    emitter.on('toto', () => {
+      context.fork(() => {
+        context.set('foo', 'toto2');
+      });
+    });
+
+    setTimeout(() => {
+      context.fork(() => {
+        context.set('foo', 'titi');
+        emitter.emit('titi');
+        setTimeout(() => {
+          deferredTiti.resolve(context.get('foo'));
+        }, 50);
+      });
+    }, 100);
+    setTimeout(() => {
+      context.fork(() => {
+        context.set('foo', 'toto');
+        emitter.emit('toto');
+        setTimeout(() => {
+          deferredToto.resolve(context.get('foo'));
+        }, 50);
+      });
+    }, 200);
+
+    expect([await deferredTiti, await deferredToto]).toStrictEqual([
+      'titi',
+      'toto',
+    ]);
+  });
+
+  it('should return good value with the callback', async () => {
+    const context = createSimpleContext();
+
+    const string = context
+      .fork(() => {
+        return 'hello';
+      })
+      .toUpperCase();
+
+    expect(string).toBe('HELLO');
   });
 });

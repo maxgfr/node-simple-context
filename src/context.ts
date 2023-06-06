@@ -16,8 +16,13 @@ export class SimpleContext {
     return this.setForkProperty<T>(key, value);
   }
 
-  public fork(): SimpleContext {
+  public fork<T>(callback: () => T): T;
+  public fork(): SimpleContext;
+  public fork<T>(callback?: () => T): SimpleContext | T {
     const forkedProperties = { ...this.properties };
+    if (callback) {
+      return this.asyncLocalStorage.run(forkedProperties, callback);
+    }
     this.asyncLocalStorage.enterWith(forkedProperties);
     return this;
   }
