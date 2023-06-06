@@ -1,25 +1,11 @@
-import asyncHooks from 'async_hooks';
+import { AsyncLocalStorage } from 'async_hooks';
 
 export class SimpleContext {
   private properties: Record<string, unknown> = {};
-  private asyncHooks: asyncHooks.AsyncHook;
-  private store: Map<number, typeof this.properties | undefined>;
+  private asyncLocalStorage: AsyncLocalStorage<typeof this.properties>;
 
   constructor() {
-    this.store = new Map();
-    this.asyncHooks = asyncHooks.createHook({
-      init: (asyncId, _, triggerAsyncId) => {
-        if (this.store.has(triggerAsyncId)) {
-          this.store.set(asyncId, this.store.get(triggerAsyncId));
-        }
-      },
-      destroy: (asyncId) => {
-        if (this.store.has(asyncId)) {
-          this.store.delete(asyncId);
-        }
-      },
-    });
-    this.asyncHooks.enable();
+    this.asyncLocalStorage = new AsyncLocalStorage();
   }
 
   public get<T>(key: string): T | undefined {
@@ -31,17 +17,18 @@ export class SimpleContext {
   }
 
   public fork(): SimpleContext {
-    this.store.set(asyncHooks.executionAsyncId(), {});
+    const forkedProperties = { ...this.properties };
+    this.asyncLocalStorage.enterWith(forkedProperties);
     return this;
   }
 
   private setForkProperty<T>(key: string, value: T): void {
-    const store = this.store.get(asyncHooks.executionAsyncId());
+    const store = this.asyncLocalStorage.getStore();
     store ? (store[key] = value) : (this.properties[key] = value);
   }
 
   private getForkProperty<T>(key: string): T | undefined {
-    const store = this.store.get(asyncHooks.executionAsyncId());
+    const store = this.asyncLocalStorage.getStore();
     return store
       ? (store[key] as T | undefined)
       : (this.properties[key] as T | undefined);
