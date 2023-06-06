@@ -49,7 +49,7 @@ console.log(contextA.get<string>('foo')); // bar
 
 #### By forking your context
 
-Thanks to [`async_hooks`](https://nodejs.org/api/async_hooks.html) api, you can `fork` your context in promise or async functions. As you can see below:
+Thanks to [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html) api, you can `fork` your context in promise or async functions. As you can see below:
 
 ```ts
 const context = createSimpleContext();

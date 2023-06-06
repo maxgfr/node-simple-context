@@ -22,8 +22,7 @@
     "node-simple-context",
     "minimalist",
     "react-context",
-    "async_hooks",
-    "async-hooks",
+    "AsyncLocalStorage",
     "typescript"
   ],
   "scripts": {
