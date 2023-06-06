@@ -2,7 +2,7 @@
 
 `node-simple-context` is an helper to create a context in node.
 
-This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You definitely should check it out! Thanks to @devthejo for his help 💪
+This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You definitely should check it out! Thanks to [@devthejo](https://github.com/devthejo) for his help 💪
 
 ## Installation
 
