@@ -1504,14 +1504,15 @@
     source-map-support "^0.5.21"
     tslib "^2.5.0"
 
-"@swc/cli@0.1.63":
-  version "0.1.63"
-  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.1.63.tgz#b4ab850f8c285d06d593428b14ffa3df782adcbb"
-  integrity sha512-EM9oxxHzmmsprYRbGqsS2M4M/Gr5Gkcl0ROYYIdlUyTkhOiX822EQiRCpPCwdutdnzH2GyaTN7wc6i0Y+CKd3A==
+"@swc/cli@0.1.64":
+  version "0.1.64"
+  resolved "https://registry.yarnpkg.com/@swc/cli/-/cli-0.1.64.tgz#5bee363c1ec6c9f91be343044997d99174e1bfdb"
+  integrity sha512-k0le1bh/7xCoutC9JH4ONd+NQnyYxFbMprPjz6xihwaOkdLdcSfUCmv20U4nRRjQRk89bOVhq6m/BehogEPeAA==
   dependencies:
     "@mole-inc/bin-wrapper" "^8.0.1"
     commander "^7.1.0"
     fast-glob "^3.2.5"
+    minimatch "^9.0.3"
     semver "^7.3.8"
     slash "3.0.0"
     source-map "^0.7.3"
@@ -5268,6 +5269,13 @@ minimatch@^9.0.1:
   version "9.0.1"
   resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-9.0.1.tgz#8a555f541cf976c622daf078bb28f29fb927c253"
   integrity sha512-0jWhJpD/MdhPXwPuiRkCbfYfSKp2qnn2eOc279qI7f+osl/l+prKSrvhg157zSYvx/1nmgn2NqdT6k2Z7zSH9w==
+  dependencies:
+    brace-expansion "^2.0.1"
+
+minimatch@^9.0.3:
+  version "9.0.3"
+  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-9.0.3.tgz#a6e00c3de44c3a542bfaae70abfc22420a6da825"
+  integrity sha512-RHiac9mvaRw0x3AYRgDC1CxAP7HTcNrrECeA8YYJeWnpo+2Q5CegtZjaotWTWxDG3UeGA1coE05iH1mPjT/2mg==
   dependencies:
     brace-expansion "^2.0.1"
 
