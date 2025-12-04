@@ -1,6 +1,6 @@
 {
   "name": "node-simple-context",
-  "version": "1.5.10",
+  "version": "1.5.11",
   "author": "maxgfr",
   "license": "MIT",
   "description": "A minimalist context for node, inspired by React Context",
