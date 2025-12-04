@@ -30,6 +30,8 @@ jobs:
         run: yarn build
       - name: Release
         run: yarn release
+      - name: Configure npm for OIDC
+        run: npm install -g npm@11.6.1
       - name: npm version
         run: npm --version
       - name: Publish to npm with OIDC
