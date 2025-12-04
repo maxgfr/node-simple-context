@@ -30,5 +30,7 @@ jobs:
         run: yarn build
       - name: Release
         run: yarn release
+      - name: Setup npm trusted publish
+        run: npx setup-npm-trusted-publish node-simple-context
       - name: Publish to npm with OIDC
-        run: npm publish --provenance --access public
+        run: npm publish
