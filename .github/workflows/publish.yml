@@ -30,5 +30,7 @@ jobs:
         run: yarn build
       - name: Release
         run: yarn release
+      - name: npm version
+        run: npm --version
       - name: Publish to npm with OIDC
-        run: npm publish --provenance --access public
+        run: npm publish
