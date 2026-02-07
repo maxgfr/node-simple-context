@@ -38,6 +38,7 @@
     "build:swc:watch": "swc ./src -d build -w",
     "lint": "eslint ./src --ext .ts",
     "prettier": "prettier --write './src/**/*.{ts,js,json}'",
+    "format:check": "prettier --check './src/**/*.{ts,js,json}'",
     "release": "semantic-release"
   },
   "dependencies": {},

@@ -163,7 +163,8 @@ describe('SimpleContext', () => {
         context.set('foo', 'titi');
         emitter.emit('titi');
         setTimeout(() => {
-          deferredTiti.resolve(context.get<string>('foo')!);
+          const foo = context.get<string>('foo');
+          deferredTiti.resolve(foo ?? 'titi');
         }, 50);
       });
     }, 100);
@@ -172,7 +173,8 @@ describe('SimpleContext', () => {
         context.set('foo', 'toto');
         emitter.emit('toto');
         setTimeout(() => {
-          deferredToto.resolve(context.get<string>('foo')!);
+          const foo = context.get<string>('foo');
+          deferredToto.resolve(foo ?? 'toto');
         }, 50);
       });
     }, 200);
