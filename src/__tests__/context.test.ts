@@ -365,7 +365,7 @@ describe('SimpleContext', () => {
     it('should throw TypeError for non-string key in set', () => {
       const context = createSimpleContext();
       expect(() => context.set(123 as unknown as string, 'value')).toThrow(
-        TypeError
+        TypeError,
       );
     });
 

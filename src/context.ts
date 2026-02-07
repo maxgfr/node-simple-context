@@ -219,7 +219,7 @@ export class SimpleContext {
   private validateKey(key: unknown): void {
     if (typeof key !== 'string') {
       throw new TypeError(
-        `Context key must be a string, received: ${typeof key}`
+        `Context key must be a string, received: ${typeof key}`,
       );
     }
     if (key.length === 0) {
