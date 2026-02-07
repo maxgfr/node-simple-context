@@ -8,35 +8,23 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [24]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org/'
+      - uses: pnpm/action-setup@v4
         with:
           version: 10
-
-      - name: Install dependencies
+      - name: Install
         run: pnpm install --frozen-lockfile
-
       - name: Lint
         run: pnpm run lint
-
       - name: Format check
         run: pnpm run format:check
-
       - name: TypeScript check
         run: pnpm exec tsc --noEmit
-
       - name: Build
         run: pnpm run build
