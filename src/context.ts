@@ -6,14 +6,27 @@ import { AsyncLocalStorage } from 'node:async_hooks';
  * Inspired by React Context, this class allows you to create and manage isolated
  * contexts that work seamlessly with async/await and promises.
  *
+ * @typeParam Schema - An optional type defining the keys and value types for this context.
+ * When provided, all operations are fully type-safe. When omitted, keys are unconstrained strings
+ * and values are typed as `unknown`.
+ *
  * @example
  * ```ts
+ * // Untyped usage
  * const context = createSimpleContext();
  * context.set('userId', '12345');
- * const userId = context.get<string>('userId');
+ * const userId = context.get('userId'); // unknown | undefined
+ *
+ * // Typed usage (recommended)
+ * type MySchema = { userId: string; count: number };
+ * const context = createSimpleContext<MySchema>();
+ * context.set('userId', '12345'); // type-checked
+ * const userId = context.get('userId'); // string | undefined
  * ```
  */
-export class SimpleContext {
+export class SimpleContext<
+  Schema extends Record<string, unknown> = Record<string, unknown>,
+> {
   private properties: Record<string, unknown> = {};
   private asyncLocalStorage: AsyncLocalStorage<Record<string, unknown>>;
 
@@ -30,12 +43,12 @@ export class SimpleContext {
    *
    * @example
    * ```ts
-   * const userId = context.get<string>('userId');
+   * const userId = context.get('userId'); // string | undefined (with typed schema)
    * ```
    */
-  public get<T>(key: string): T | undefined {
+  public get<K extends string & keyof Schema>(key: K): Schema[K] | undefined {
     this.validateKey(key);
-    return this.getForkProperty<T>(key);
+    return this.getForkProperty(key) as Schema[K] | undefined;
   }
 
   /**
@@ -50,9 +63,9 @@ export class SimpleContext {
    * context.set('userId', '12345');
    * ```
    */
-  public set<T>(key: string, value: T): void {
+  public set<K extends string & keyof Schema>(key: K, value: Schema[K]): void {
     this.validateKey(key);
-    this.setForkProperty<T>(key, value);
+    this.setForkProperty(key, value);
   }
 
   /**
@@ -67,7 +80,7 @@ export class SimpleContext {
    * context.delete('userId');
    * ```
    */
-  public delete(key: string): boolean {
+  public delete<K extends string & keyof Schema>(key: K): boolean {
     this.validateKey(key);
     const existed = this.has(key);
     const store = this.asyncLocalStorage.getStore();
@@ -93,7 +106,7 @@ export class SimpleContext {
    * }
    * ```
    */
-  public has(key: string): boolean {
+  public has<K extends string & keyof Schema>(key: K): boolean {
     this.validateKey(key);
     const store = this.asyncLocalStorage.getStore();
     return store
@@ -112,7 +125,9 @@ export class SimpleContext {
   public clear(): void {
     const store = this.asyncLocalStorage.getStore();
     if (store) {
-      this.asyncLocalStorage.enterWith({});
+      for (const key of Object.keys(store)) {
+        delete store[key];
+      }
     } else {
       this.properties = {};
     }
@@ -130,9 +145,9 @@ export class SimpleContext {
    * // allValues => { userId: '12345', sessionId: 'abc' }
    * ```
    */
-  public getAll(): Record<string, unknown> {
+  public getAll(): Partial<Schema> {
     const store = this.asyncLocalStorage.getStore();
-    return store ? { ...store } : { ...this.properties };
+    return (store ? { ...store } : { ...this.properties }) as Partial<Schema>;
   }
 
   /**
@@ -146,9 +161,11 @@ export class SimpleContext {
    * // keys => ['userId', 'sessionId']
    * ```
    */
-  public keys(): string[] {
+  public keys(): Array<string & keyof Schema> {
     const store = this.asyncLocalStorage.getStore();
-    return Object.keys(store ?? this.properties);
+    return Object.keys(store ?? this.properties) as Array<
+      string & keyof Schema
+    >;
   }
 
   /**
@@ -169,26 +186,14 @@ export class SimpleContext {
   /**
    * Creates a new forked context or runs a callback within a forked context.
    *
-   * When called without a callback, it creates a new context scope that inherits
-   * the current properties. Subsequent changes won't affect the parent context.
-   *
-   * **Warning:** The no-callback form uses `AsyncLocalStorage.enterWith()`, which
-   * permanently replaces the store for the entire current async execution context.
-   * There is no way to "unfork" after calling it. Prefer the callback form for
-   * predictable scoping.
-   *
    * When called with a callback, it executes the callback within the forked context
    * and returns the callback's return value. This is the recommended form.
    *
-   * @param callback - Optional callback to execute within the forked context.
-   * @returns The SimpleContext instance (if no callback) or the callback's return value.
+   * @param callback - The callback to execute within the forked context.
+   * @returns The callback's return value.
    *
    * @example
    * ```ts
-   * // Without callback - for use with async operations
-   * context.fork().set('foo', 'bar');
-   *
-   * // With callback - execute and return value
    * const result = context.fork(() => {
    *   context.set('foo', 'bar');
    *   return 'hello';
@@ -196,8 +201,25 @@ export class SimpleContext {
    * ```
    */
   public fork<T>(callback: () => T): T;
-  public fork(): SimpleContext;
-  public fork<T>(callback?: () => T): SimpleContext | T {
+  /**
+   * Creates a new forked context without a callback.
+   *
+   * @deprecated Use `fork(callback)` instead. The no-callback form uses
+   * `AsyncLocalStorage.enterWith()` which permanently replaces the store for the
+   * entire current async execution context. There is no way to "unfork" after calling it.
+   *
+   * @returns The SimpleContext instance.
+   *
+   * @example
+   * ```ts
+   * // Prefer the callback form instead:
+   * context.fork(() => {
+   *   context.set('foo', 'bar');
+   * });
+   * ```
+   */
+  public fork(): SimpleContext<Schema>;
+  public fork<T>(callback?: () => T): SimpleContext<Schema> | T {
     const currentStore = this.asyncLocalStorage.getStore();
     const forkedProperties = currentStore
       ? { ...currentStore }
@@ -230,7 +252,7 @@ export class SimpleContext {
   /**
    * Internal method to set a property in the appropriate context scope.
    */
-  private setForkProperty<T>(key: string, value: T): void {
+  private setForkProperty(key: string, value: unknown): void {
     const store = this.asyncLocalStorage.getStore();
     if (store) {
       store[key] = value;
@@ -242,25 +264,34 @@ export class SimpleContext {
   /**
    * Internal method to get a property from the appropriate context scope.
    */
-  private getForkProperty<T>(key: string): T | undefined {
+  private getForkProperty(key: string): unknown {
     const store = this.asyncLocalStorage.getStore();
-    return store
-      ? (store[key] as T | undefined)
-      : (this.properties[key] as T | undefined);
+    return store ? store[key] : this.properties[key];
   }
 }
 
 /**
  * Factory function to create a new SimpleContext instance.
  *
+ * @typeParam Schema - An optional type defining the keys and value types for this context.
  * @returns A new SimpleContext instance.
  *
  * @example
  * ```ts
+ * // Untyped
  * const context = createSimpleContext();
- * context.set('foo', 'bar');
+ *
+ * // Typed (recommended)
+ * type MySchema = { userId: string; role: 'admin' | 'user' };
+ * const context = createSimpleContext<MySchema>();
+ * context.set('userId', '123');    // OK
+ * context.set('role', 'admin');    // OK
+ * context.set('role', 'invalid');  // Type error!
+ * context.set('unknown', 'value'); // Type error!
  * ```
  */
-export function createSimpleContext(): SimpleContext {
-  return new SimpleContext();
+export function createSimpleContext<
+  Schema extends Record<string, unknown> = Record<string, unknown>,
+>(): SimpleContext<Schema> {
+  return new SimpleContext<Schema>();
 }

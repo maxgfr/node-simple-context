@@ -29,6 +29,8 @@ jobs:
           version: 10
       - name: Install
         run: pnpm install --frozen-lockfile
+      - name: Test
+        run: pnpm test
       - name: Build
         run: pnpm build
       - name: Release

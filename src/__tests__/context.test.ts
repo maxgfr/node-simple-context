@@ -10,7 +10,7 @@ describe('SimpleContext', () => {
   it('should get a value from a context', () => {
     const context = createSimpleContext();
     context.set('A', 10);
-    const res = context.get<number>('A');
+    const res = context.get('A');
     expect(res).toBe(10);
   });
 
@@ -163,7 +163,7 @@ describe('SimpleContext', () => {
         context.set('foo', 'titi');
         emitter.emit('titi');
         setTimeout(() => {
-          const foo = context.get<string>('foo');
+          const foo = context.get('foo') as string;
           deferredTiti.resolve(foo ?? 'titi');
         }, 50);
       });
@@ -173,7 +173,7 @@ describe('SimpleContext', () => {
         context.set('foo', 'toto');
         emitter.emit('toto');
         setTimeout(() => {
-          const foo = context.get<string>('foo');
+          const foo = context.get('foo') as string;
           deferredToto.resolve(foo ?? 'toto');
         }, 50);
       });
@@ -295,7 +295,7 @@ describe('SimpleContext', () => {
       context.set('foo', 'bar');
 
       const all = context.getAll();
-      all.foo = 'modified';
+      (all as Record<string, unknown>).foo = 'modified';
 
       expect(context.get('foo')).toBe('bar');
     });
@@ -475,9 +475,9 @@ describe('SimpleContext', () => {
       context.set('obj', nested);
 
       const all = context.getAll();
-      (all.obj as { inner: string }).inner = 'mutated';
+      (all as Record<string, { inner: string }>).obj.inner = 'mutated';
 
-      const retrieved = context.get<{ inner: string }>('obj');
+      const retrieved = context.get('obj') as { inner: string };
       expect(retrieved?.inner).toBe('mutated');
     });
 
@@ -485,22 +485,92 @@ describe('SimpleContext', () => {
       const context = createSimpleContext();
 
       const [resultA, resultB] = await Promise.all([
-        new Promise<string | undefined>((resolve) => {
+        new Promise<unknown>((resolve) => {
           context.fork(() => {
             context.set('val', 'A');
-            setTimeout(() => resolve(context.get<string>('val')), 50);
+            setTimeout(() => resolve(context.get('val')), 50);
           });
         }),
-        new Promise<string | undefined>((resolve) => {
+        new Promise<unknown>((resolve) => {
           context.fork(() => {
             context.set('val', 'B');
-            setTimeout(() => resolve(context.get<string>('val')), 50);
+            setTimeout(() => resolve(context.get('val')), 50);
           });
         }),
       ]);
 
       expect(resultA).toBe('A');
       expect(resultB).toBe('B');
+    });
+  });
+
+  describe('typed context', () => {
+    type UserSchema = {
+      userId: string;
+      count: number;
+      active: boolean;
+    };
+
+    it('should create a typed context', () => {
+      const context = createSimpleContext<UserSchema>();
+      expect(context).toBeInstanceOf(SimpleContext);
+    });
+
+    it('should set and get typed values', () => {
+      const context = createSimpleContext<UserSchema>();
+      context.set('userId', 'abc123');
+      context.set('count', 42);
+      context.set('active', true);
+
+      expect(context.get('userId')).toBe('abc123');
+      expect(context.get('count')).toBe(42);
+      expect(context.get('active')).toBe(true);
+    });
+
+    it('should return typed keys', () => {
+      const context = createSimpleContext<UserSchema>();
+      context.set('userId', 'abc');
+      context.set('count', 1);
+
+      const keys = context.keys();
+      expect(keys).toEqual(expect.arrayContaining(['userId', 'count']));
+    });
+
+    it('should return typed partial from getAll', () => {
+      const context = createSimpleContext<UserSchema>();
+      context.set('userId', 'abc');
+      context.set('count', 1);
+
+      const all = context.getAll();
+      expect(all).toEqual({ userId: 'abc', count: 1 });
+    });
+
+    it('should work with fork and preserve types', () => {
+      const context = createSimpleContext<UserSchema>();
+      context.set('userId', 'parent');
+
+      context.fork(() => {
+        context.set('userId', 'child');
+        expect(context.get('userId')).toBe('child');
+      });
+
+      expect(context.get('userId')).toBe('parent');
+    });
+
+    it('should support has/delete/clear with typed keys', () => {
+      const context = createSimpleContext<UserSchema>();
+      context.set('userId', 'abc');
+      context.set('count', 5);
+
+      expect(context.has('userId')).toBe(true);
+      expect(context.size()).toBe(2);
+
+      context.delete('count');
+      expect(context.has('count')).toBe(false);
+      expect(context.size()).toBe(1);
+
+      context.clear();
+      expect(context.size()).toBe(0);
     });
   });
 });

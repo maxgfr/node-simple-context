@@ -24,6 +24,8 @@ jobs:
         run: pnpm run lint
       - name: Format check
         run: pnpm run format:check
+      - name: Test
+        run: pnpm test
       - name: TypeScript check
         run: pnpm exec tsc --noEmit
       - name: Build

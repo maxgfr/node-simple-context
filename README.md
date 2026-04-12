@@ -1,8 +1,10 @@
 # node-simple-context
 
-`node-simple-context` is a helper to create a context in Node.js.
+`node-simple-context` is a minimalist, type-safe context manager for Node.js, inspired by React Context.
 
-This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You definitely should check it out! Thanks to [@devthejo](https://github.com/devthejo) for his help
+Built on top of [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html), it provides isolated contexts that work seamlessly with async/await and promises — with zero runtime dependencies.
+
+This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You definitely should check it out! Thanks to [@devthejo](https://github.com/devthejo) for his help.
 
 ## Installation
 
@@ -10,21 +12,65 @@ This library is highly inspired by [nctx](https://github.com/devthejo/nctx). You
 npm install node-simple-context
 ```
 
-## API Reference
+## Quick start
 
-### `createSimpleContext()`
+### Typed context (recommended)
 
-Creates a new `SimpleContext` instance.
+Define a schema for compile-time type safety on keys and values:
 
 ```ts
 import { createSimpleContext } from 'node-simple-context';
 
-const context = createSimpleContext();
+type RequestSchema = {
+  userId: string;
+  role: 'admin' | 'user';
+  requestId: string;
+};
+
+const context = createSimpleContext<RequestSchema>();
+
+context.set('userId', '12345');     // OK
+context.set('role', 'admin');       // OK
+context.set('role', 'invalid');     // Type error!
+context.set('unknown', 'value');    // Type error!
+
+const userId = context.get('userId'); // string | undefined
+const role = context.get('role');     // 'admin' | 'user' | undefined
 ```
 
-### `SimpleContext` class
+### Untyped context
 
-#### `get<T>(key: string): T | undefined`
+Without a schema, all string keys are accepted and values are `unknown`:
+
+```ts
+const context = createSimpleContext();
+
+context.set('foo', 'bar');
+context.set('count', 42);
+
+const value = context.get('foo'); // unknown | undefined
+```
+
+## API Reference
+
+### `createSimpleContext<Schema>()`
+
+Creates a new `SimpleContext` instance. Optionally accepts a type parameter defining the context's keys and value types.
+
+```ts
+import { createSimpleContext } from 'node-simple-context';
+
+// Untyped
+const context = createSimpleContext();
+
+// Typed
+type MySchema = { userId: string; count: number };
+const typedContext = createSimpleContext<MySchema>();
+```
+
+### `SimpleContext<Schema>` class
+
+#### `get<K extends keyof Schema>(key: K): Schema[K] | undefined`
 
 Retrieves a value from the context by key.
 
@@ -37,16 +83,16 @@ Retrieves a value from the context by key.
 
 **Example:**
 ```ts
-const userId = context.get<string>('userId');
+const userId = context.get('userId'); // string | undefined (with typed schema)
 ```
 
-#### `set<T>(key: string, value: T): void`
+#### `set<K extends keyof Schema>(key: K, value: Schema[K]): void`
 
 Sets a value in the context by key.
 
 **Parameters:**
 - `key` - The key to set. Must be a non-empty string.
-- `value` - The value to associate with the key.
+- `value` - The value to associate with the key. Must match the schema type.
 
 **Throws:** `TypeError` if key is not a string or is empty.
 
@@ -55,14 +101,14 @@ Sets a value in the context by key.
 context.set('userId', '12345');
 ```
 
-#### `delete(key: string): boolean`
+#### `delete<K extends keyof Schema>(key: K): boolean`
 
 Deletes a value from the context by key.
 
 **Parameters:**
 - `key` - The key to delete. Must be a non-empty string.
 
-**Returns:** `true` if the operation succeeded (even if key didn't exist).
+**Returns:** `true` if the key existed and was deleted, `false` if it didn't exist.
 
 **Throws:** `TypeError` if key is not a string or is empty.
 
@@ -71,7 +117,7 @@ Deletes a value from the context by key.
 context.delete('userId');
 ```
 
-#### `has(key: string): boolean`
+#### `has<K extends keyof Schema>(key: K): boolean`
 
 Checks if a key exists in the context.
 
@@ -98,7 +144,7 @@ Clears all values from the current context.
 context.clear();
 ```
 
-#### `getAll(): Record<string, unknown>`
+#### `getAll(): Partial<Schema>`
 
 Gets all key-value pairs from the current context as a plain object.
 
@@ -110,7 +156,7 @@ const allValues = context.getAll();
 console.log(allValues); // { userId: '12345', sessionId: 'abc' }
 ```
 
-#### `keys(): string[]`
+#### `keys(): Array<keyof Schema>`
 
 Gets all keys from the current context.
 
@@ -134,70 +180,42 @@ const count = context.size();
 console.log(count); // 2
 ```
 
-#### `fork<T>(callback?: () => T): SimpleContext | T`
+#### `fork<T>(callback: () => T): T`
 
-Creates a new forked context or runs a callback within a forked context.
+Runs a callback within a forked context that inherits current values. Changes inside the fork don't affect the parent context. This is the recommended way to use fork.
 
 **Parameters:**
-- `callback` - Optional callback to execute within the forked context.
+- `callback` - The callback to execute within the forked context.
 
-**Returns:** The `SimpleContext` instance (if no callback) or the callback's return value.
+**Returns:** The callback's return value.
 
-**Behavior:**
-- When called without a callback, it creates a new context scope that inherits the current properties. Subsequent changes won't affect the parent context.
-- When called with a callback, it executes the callback within the forked context and returns the callback's return value.
-
-**Examples:**
+**Example:**
 ```ts
-// Without callback - for use with async operations
-context.fork().set('foo', 'bar');
+context.set('userId', 'parent');
 
-// With callback - execute and return value
 const result = context.fork(() => {
-  context.set('foo', 'bar');
-  return 'hello';
+  context.set('userId', 'child');
+  return context.get('userId'); // 'child'
 });
+
+context.get('userId'); // 'parent' — unchanged
 ```
+
+#### `fork(): SimpleContext<Schema>` *(deprecated)*
+
+Creates a new forked context without a callback. **Deprecated** because it uses `AsyncLocalStorage.enterWith()` which permanently replaces the store for the entire current async execution context. Prefer `fork(callback)` instead.
 
 ## Usage Examples
-
-### Basic usage
-
-#### 1. Create a new file `my-context.ts` in which you define your context.
-
-```ts
-import { createSimpleContext } from 'node-simple-context';
-
-export const contextA = createSimpleContext();
-export const contextB = createSimpleContext();
-```
-
-#### 2. You now can set the context in your code wherever you want
-
-```ts
-import { contextA, contextB } from './my-context';
-
-contextA.set('foo', 'bar');
-contextB.set('foo', 'baz');
-```
-
-#### 3. And, get your context value wherever you want
-
-```ts
-import { contextA, contextB } from './my-context';
-
-console.log(contextA.get('foo')); // bar
-console.log(contextB.get('foo')); // baz
-console.log(contextA.get('xxx')); // undefined
-
-// in typescript
-console.log(contextA.get<string>('foo')); // bar
-```
 
 ### Using additional methods
 
 ```ts
-const context = createSimpleContext();
+type SessionSchema = {
+  userId: string;
+  sessionId: string;
+};
+
+const context = createSimpleContext<SessionSchema>();
 
 // Set values
 context.set('userId', '12345');
@@ -225,136 +243,80 @@ context.clear();
 console.log(context.size()); // 0
 ```
 
-### Complex examples
+### Forking context for async isolation
 
-#### By forking your context
-
-Thanks to [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html) API, you can `fork` your context in promise or async functions. As you can see below:
-
-> You can also pass a callback in `fork` method to runs a function synchronously within a context and returns its return value which uses [run method from AsyncLocalStorage](https://nodejs.org/api/async_context.html#asynclocalstoragerunstore-callback-args) (cf. [example](./src/__tests__/context.test.ts#L134))
+Thanks to [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html), you can `fork` your context to create isolated scopes in async operations:
 
 ```ts
 const context = createSimpleContext();
 
-const func = (): string => {
-  const foo = context.get('foo');
-  return `foo=${foo}`;
-};
+context.set('requestId', 'root');
 
-context.fork();
-context.set('foo', 'bar');
-
-const res = await Promise.all([
-  new Promise((resolve) => {
-    context.fork().set('foo', 'tata');
-    setTimeout(() => {
-      resolve(func());
-    }, 400);
+// Each fork gets its own isolated copy
+const results = await Promise.all([
+  context.fork(() => {
+    context.set('requestId', 'req-1');
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(context.get('requestId')), 100);
+    });
   }),
-  new Promise((resolve) => {
-    context.fork().set('foo', 'toto');
-    setTimeout(() => {
-      resolve(func());
-    }, 200);
-  }),
-  new Promise((resolve) => {
-    context.fork().set('foo', 'titi');
-    setTimeout(() => {
-      resolve(func());
-    }, 100);
-  }),
-  new Promise((resolve) => {
-    context.fork().set('foo', 'tutu');
-    setTimeout(() => {
-      resolve(func());
-    }, 600);
+  context.fork(() => {
+    context.set('requestId', 'req-2');
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(context.get('requestId')), 50);
+    });
   }),
 ]);
 
-console.log(res); // ['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']
+console.log(results); // ['req-1', 'req-2']
+console.log(context.get('requestId')); // 'root' — parent unchanged
 ```
 
-#### By using multiple contexts
+### Nested forks
+
+Forks can be nested to any depth, each level isolated from the others:
+
+```ts
+const context = createSimpleContext();
+context.set('level', 'root');
+
+context.fork(() => {
+  context.set('level', 'child');
+
+  context.fork(() => {
+    context.set('level', 'grandchild');
+    console.log(context.get('level')); // 'grandchild'
+  });
+
+  console.log(context.get('level')); // 'child'
+});
+
+console.log(context.get('level')); // 'root'
+```
+
+### Using multiple contexts
 
 ```ts
 const contextA = createSimpleContext();
 const contextB = createSimpleContext();
-const contextC = createSimpleContext();
-const contextD = createSimpleContext();
 
-const func = (context: SimpleContext): string => {
-  const foo = context.get('foo');
-  return `foo=${foo}`;
-};
+contextA.set('foo', 'from A');
+contextB.set('foo', 'from B');
 
-const res = await Promise.all([
-  new Promise((resolve) => {
-    contextA.set('foo', 'tata');
-    setTimeout(() => {
-      resolve(func(contextA));
-    }, 400);
-  }),
-  new Promise((resolve) => {
-    contextB.set('foo', 'toto');
-    setTimeout(() => {
-      resolve(func(contextB));
-    }, 200);
-  }),
-  new Promise((resolve) => {
-    contextC.set('foo', 'titi');
-    setTimeout(() => {
-      resolve(func(contextC));
-    }, 100);
-  }),
-  new Promise((resolve) => {
-    contextD.set('foo', 'tutu');
-    setTimeout(() => {
-      resolve(func(contextD));
-    }, 600);
-  }),
-]);
-
-console.log(res); // ['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']
+console.log(contextA.get('foo')); // 'from A'
+console.log(contextB.get('foo')); // 'from B'
 ```
 
-#### By using multiple keys
+## ESM and CommonJS
+
+This library supports both ESM and CommonJS:
 
 ```ts
-const context = createSimpleContext();
+// ESM
+import { createSimpleContext } from 'node-simple-context';
 
-const func = (key: string): string => {
-  const foo = context.get(key);
-  return `foo=${foo}`;
-};
-
-const res = await Promise.all([
-  new Promise((resolve) => {
-    context.set('foo1', 'tata');
-    setTimeout(() => {
-      resolve(func('foo1'));
-    }, 400);
-  }),
-  new Promise((resolve) => {
-    context.set('foo2', 'toto');
-    setTimeout(() => {
-      resolve(func('foo2'));
-    }, 200);
-  }),
-  new Promise((resolve) => {
-    context.set('foo3', 'titi');
-    setTimeout(() => {
-      resolve(func('foo3'));
-    }, 100);
-  }),
-  new Promise((resolve) => {
-    context.set('foo4', 'tutu');
-    setTimeout(() => {
-      resolve(func('foo4'));
-    }, 600);
-  }),
-]);
-
-console.log(res); // ['foo=tata', 'foo=toto', 'foo=titi', 'foo=tutu']
+// CommonJS
+const { createSimpleContext } = require('node-simple-context');
 ```
 
 ## License
